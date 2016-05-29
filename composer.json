@@ -3,7 +3,8 @@
         "silex/silex": "~2.0",
         "itav/serializer": "^0.1",
         "itav/form": "^0.3",
-        "symfony/templating": "^3.0"
+        "symfony/templating": "^3.0",
+        "itav/interesant-client": "^0.1.0"
     },
     "autoload" : {
         "psr-4" : {

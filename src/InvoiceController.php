@@ -7,6 +7,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Itav\Component\Serializer\Serializer;
 use Itav\Component\Form;
 
+
 class InvoiceController
 {
 
@@ -28,7 +29,7 @@ class InvoiceController
 
             $invoice->initDefaults();
         }
-
+                
         $form = $this->prepareAddForm($app, $invoice);
 
         $serializer = new Serializer();
@@ -85,6 +86,7 @@ class InvoiceController
      */
     public function prepareAddForm(Application $app, Invoice $invoice)
     {
+        $interesantClient = new InteresantClient();
 
         $id = new Form\Input();
         $id
@@ -116,20 +118,29 @@ class InvoiceController
 
         $sellDate = new Form\Input();
         $sellDate
-                ->setLabel('Create date:')
+                ->setLabel('Sell date:')
                 ->setName('invoice[create_date]')
                 ->setValue($invoice->getSellDate())
                 ->setClass('_datepicker');
 
         $paymentDate = new Form\Input();
         $paymentDate
-                ->setLabel('Create date:')
+                ->setLabel('Payment date:')
                 ->setName('invoice[create_date]')
                 ->setValue($invoice->getPaymentDate())
                 ->setClass('_datepicker');
 
         $paymentMethods = $this->preparePaymentMethodSelect($invoice);
-
+        
+        $selectSeller = $interesantClient->getSelectInteresant($invoice->getSeller());
+        $selectSeller
+                ->setLabel('Select Seller:')
+                ->setName('invoice[seller][id]');
+        $selectBuyer = $interesantClient->getSelectInteresant($invoice->getBuyer());
+        $selectBuyer
+                ->setLabel('Select Buyer:')
+                ->setName('invoice[buyer][id]');
+        
         $submit = new Form\Button();
         $submit
                 ->setLabel('Zapisz')
@@ -141,6 +152,9 @@ class InvoiceController
         $fs2 = new Form\FieldSet();
         $fs2->setElements([$createDate, $sellDate, $paymentDate, $paymentMethods]);
 
+        $fs3 = new Form\FieldSet();
+        $fs3->setElements([$selectSeller, $selectBuyer]);        
+        
         $form = new Form\Form();
         $form
                 ->setName('invoiceAdd')
@@ -150,6 +164,7 @@ class InvoiceController
         $form
                 ->addElement($fs)
                 ->addElement($fs2)
+                ->addElement($fs3)
                 ->addElement($submit);
         return $form;
     }
@@ -194,7 +209,7 @@ class InvoiceController
     {
         $select = new Form\Select();
         $select
-                ->setLabel('Select number plan:')
+                ->setLabel('Select payment method:')
                 ->setName('numberplan[id]');
         $options = [];
         $option = new Form\Option();

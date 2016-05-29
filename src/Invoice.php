@@ -66,8 +66,8 @@ class Invoice
         $this->createDate = new \DateTime();
         $this->sellDate = new \DateTime();
         $this->paymentDate = new \DateTime();
-        //$this->seller = new Interesant();
-        //$this->buyer = new Interesant();
+        $this->seller = new Interesant();
+        $this->buyer = new Interesant();
         $this->status = self::STATUS_DRAFT;
     }
     
