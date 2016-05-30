@@ -4,6 +4,7 @@ namespace App;
 
 class Invoice
 {
+
     const STATUS_DRAFT = 1;
     const STATUS_DELETED = 2;
     const STATUS_SENT = 3;
@@ -12,37 +13,44 @@ class Invoice
     private $number;
     private $displayNumber;
     private $numberPlanId;
+
     /**
      *
      * @var \DateTime
      */
     private $createDate;
+
     /**
      *
      * @var \DateTime
-     */    
+     */
     private $sellDate;
+
     /**
      *
      * @var \DateTime
-     */    
+     */
     private $paymentDate;
     private $paymentType;
+
     /**
      *
      * @var Interesant
      */
     private $seller;
+
     /**
      *
      * @var Interesant
      */
     private $buyer;
+
     /**
      *
      * @var Address
      */
     private $postAdres;
+
     /**
      *
      * @var Product[] 
@@ -51,6 +59,7 @@ class Invoice
     private $totalNet;
     private $totalTax;
     private $totalGross;
+
     /**
      *
      * @var TaxSummary[]
@@ -58,11 +67,10 @@ class Invoice
     private $taxSummaries = [];
     private $issuer;
 
-    
     public function __construct()
     {
         $this->id = uniqid();
-        
+
         $this->createDate = new \DateTime();
         $this->sellDate = new \DateTime();
         $this->paymentDate = new \DateTime();
@@ -70,27 +78,28 @@ class Invoice
         $this->buyer = new Interesant();
         $this->status = self::STATUS_DRAFT;
     }
-    
+
     public function initDefaults()
     {
         $this->createDate = new \DateTime();
         $this->sellDate = new \DateTime();
         $this->paymentDate = new \DateTime('+14 days');
         $this->paymentType = 1;
-        
+
         $npRepo = new NumberPlanRepo();
         $repo = new InvoiceRepo();
         $plan = $npRepo->findDefault();
-        if(!$plan){
+        if (!$plan) {
             return;
         }
-        
+
         $this->numberPlanId = $plan->getId();
         $this->number = $repo->getNextFreeNumber($plan, $this->createDate);
         $this->displayNumber = $plan->prepare($this->number, $this->createDate);
-    }    
-    
-    
+
+        $this->addProduct(new Product());
+    }
+
     public function getId()
     {
         return $this->id;
@@ -252,8 +261,22 @@ class Invoice
     {
         $this->products[] = $product;
         return $this;
-    }    
+    }
     
+    public function delProduct($index)
+    {
+        if(key_exists($index, $this->products)){
+            unset($this->products[$index]);
+        }
+        return $this;
+    }
+
+    public function reindexProducts()
+    {
+        $this->products = array_values($this->products);
+        return $this;
+    }
+
     public function setTotalNet($totalNet)
     {
         $this->totalNet = $totalNet;
@@ -277,18 +300,17 @@ class Invoice
         $this->taxSummaries = $taxSummaries;
         return $this;
     }
-    
+
     public function addTaxSummary($taxSummary)
     {
         $this->taxSummaries[] = $taxSummary;
         return $this;
     }
-    
+
     public function setIssuer($issuer)
     {
         $this->issuer = $issuer;
         return $this;
     }
 
-   
 }

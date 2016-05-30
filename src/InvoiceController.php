@@ -7,7 +7,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Itav\Component\Serializer\Serializer;
 use Itav\Component\Form;
 
-
 class InvoiceController
 {
 
@@ -29,7 +28,7 @@ class InvoiceController
 
             $invoice->initDefaults();
         }
-                
+
         $form = $this->prepareAddForm($app, $invoice);
 
         $serializer = new Serializer();
@@ -40,15 +39,25 @@ class InvoiceController
     public function saveAction(Application $app, Request $request)
     {
         $invoiceData = $request->get('invoice');
-        $taxData = $request->get('tax');
+        $submit = $request->get('submit');
+
         $serializer = $app['serializer'];
         $invoice = new Invoice();
-        $tax = new Tax();
         $invoice = $serializer->unserialize($invoiceData, Invoice::class, $invoice);
-        $tax = $serializer->unserialize($taxData, Tax::class, $tax);
-        $taxRepo = new TaxRepo();
-        $tax = $taxRepo->find($tax->getId());
-        $invoice->setTax($tax);
+        if (isset($submit['add_position'])) {
+            $invoice->addProduct(new Product());
+            $form = $this->prepareAddForm($app, $invoice);
+            $formNorm = $serializer->normalize($form);
+            return $app['templating']->render('page.php', array('form' => $formNorm));
+        }
+        if (isset($submit['remove_item'])) {
+            $index = $submit['remove_item'];
+            $invoice->delProduct($index);
+            $invoice->reindexProducts();
+            $form = $this->prepareAddForm($app, $invoice);
+            $formNorm = $serializer->normalize($form);
+            return $app['templating']->render('page.php', array('form' => $formNorm));
+        }        
         $valid = $this->validateInvoice($invoice);
         if ($valid) {
             $repo = new InvoiceRepo();
@@ -87,6 +96,7 @@ class InvoiceController
     public function prepareAddForm(Application $app, Invoice $invoice)
     {
         $interesantClient = new InteresantClient();
+        $productClient = new ProductClient();
 
         $id = new Form\Input();
         $id
@@ -97,7 +107,6 @@ class InvoiceController
         $number = new Form\Input();
         $number
                 ->setLabel('Number:')
-                ->setName('invoice[number]')
                 ->setValue($invoice->getNumber());
 
         $numberPlanSelect = $this->prepareNumberPlanSelect($invoice);
@@ -131,7 +140,7 @@ class InvoiceController
                 ->setClass('_datepicker');
 
         $paymentMethods = $this->preparePaymentMethodSelect($invoice);
-        
+
         $selectSeller = $interesantClient->getSelectInteresant($invoice->getSeller());
         $selectSeller
                 ->setLabel('Select Seller:')
@@ -140,11 +149,28 @@ class InvoiceController
         $selectBuyer
                 ->setLabel('Select Buyer:')
                 ->setName('invoice[buyer][id]');
-        
+
+        $issuer = new Form\Input();
+        $issuer
+                ->setLabel('Issuer:')
+                ->setName('invoice[issuer]')
+                ->setValue($invoice->getIssuer());
+
+        //$selectProduct = $productClient->getSelectProduct(new Product());
+
+        $productRows = $this->preparePositionRows($invoice);
+
+        $addButton = new Form\Button();
+        $addButton
+                ->setLabel('Add position')
+                ->setType(Form\Button::TYPE_SUBMIT)
+                ->setName('submit[add_position]');
+
         $submit = new Form\Button();
         $submit
-                ->setLabel('Zapisz')
-                ->setType(Form\Button::TYPE_SUBMIT);
+                ->setLabel('Save')
+                ->setType(Form\Button::TYPE_SUBMIT)
+                ->setName('submit[save]');
 
         $fs = new Form\FieldSet();
         $fs->setElements([$id, $number, $numberPlanSelect, $displayNumber]);
@@ -153,8 +179,14 @@ class InvoiceController
         $fs2->setElements([$createDate, $sellDate, $paymentDate, $paymentMethods]);
 
         $fs3 = new Form\FieldSet();
-        $fs3->setElements([$selectSeller, $selectBuyer]);        
-        
+        $fs3->setElements([$selectSeller, $selectBuyer, $issuer]);
+
+        $fs4 = new Form\FieldSet();
+        $fs4->setElements($productRows);
+
+        $fs5 = new Form\FieldSet();
+        $fs5->setElements([$submit, $addButton]);
+
         $form = new Form\Form();
         $form
                 ->setName('invoiceAdd')
@@ -165,7 +197,8 @@ class InvoiceController
                 ->addElement($fs)
                 ->addElement($fs2)
                 ->addElement($fs3)
-                ->addElement($submit);
+                ->addElement($fs4)
+                ->addElement($fs5);
         return $form;
     }
 
@@ -186,7 +219,7 @@ class InvoiceController
         $select = new Form\Select();
         $select
                 ->setLabel('Select number plan:')
-                ->setName('numberplan[id]');
+                ->setName('invoice[number_plan_id]');
         $options = [];
         foreach ($plans as $plan) {
             $option = new Form\Option();
@@ -210,7 +243,7 @@ class InvoiceController
         $select = new Form\Select();
         $select
                 ->setLabel('Select payment method:')
-                ->setName('numberplan[id]');
+                ->setName('invoice[payment_type]');
         $options = [];
         $option = new Form\Option();
         $option
@@ -221,9 +254,96 @@ class InvoiceController
         $option
                 ->setLabel('cash')
                 ->setSelected('cash' === $invoice->getPaymentType());
-        $options[] = $option;  
+        $options[] = $option;
         $select->setOptions($options);
-        
+
+        return $select;
+    }
+
+    public function preparePositionRows(Invoice $invoice)
+    {
+        $i = 0;
+
+        $positions = [];
+        foreach ($invoice->getProducts() as $product) {
+
+            $id = new Form\Input();
+            $id
+                    ->setType(Form\Input::TYPE_HIDDEN)
+                    ->setName("[products][$i][id]")
+                    ->setValue($product->getId());
+
+            $number = new Form\Input();
+            $number
+                    ->setType(Form\Input::TYPE_TEXT)
+                    ->setName("invoice[products][$i][position]")
+                    ->setValue($i + 1)
+                    ->setDisabled(true);
+
+            $name = new Form\Input();
+            $name
+                    ->setLabel('Name:')
+                    ->setName("invoice[products][$i][name]")
+                    ->setValue($product->getName());
+
+            $priceNet = new Form\Input();
+            $priceNet
+                    ->setLabel('Price Net:')
+                    ->setName("invoice[products][$i][price_net]")
+                    ->setValue($product->getPriceNet());
+
+            $taxSelect = $this->prepareTaxSelect($product, $i);
+
+            $taxValue = new Form\Input();
+            $taxValue
+                    ->setLabel('Tax Value:')
+                    ->setName("invoice[products][$i][tax_value]")
+                    ->setValue($product->getTaxValue());
+
+            $priceGross = new Form\Input();
+            $priceGross
+                    ->setLabel('Price Gross:')
+                    ->setName("invoice[products][$i][price_gross]")
+                    ->setValue($product->getPriceGross());
+
+            $removeButton = new Form\Button();
+            $removeButton
+                    ->setLabel('Remove')
+                    ->setType(Form\Button::TYPE_SUBMIT)
+                    ->setName("submit[remove_item]")
+                    ->setValue($i);
+
+            $fs = new Form\FieldSet();
+            $fs->setElements([$id, $number, $name, $priceNet, $taxSelect, $taxValue, $priceGross, $removeButton]);
+
+            $positions[] = $fs;
+            $i++;
+        }
+
+        return $positions;
+    }
+
+    /**
+     * 
+     * @param Product $product
+     * @return Form\Select
+     */
+    public function prepareTaxSelect($product, $i)
+    {
+        $productClient = new ProductClient();
+        $taxes = $productClient->getTaxes();
+        $select = new Form\Select();
+        $select->setName("invoice[products][$i][tax][id]");
+        $options = [];
+        foreach ($taxes as $tax) {
+            $option = new Form\Option();
+            $option
+                    ->setLabel($tax->getName())
+                    ->setValue($tax->getId())
+                    ->setSelected($tax->getId() === $product->getTax()->getId());
+            $options[] = $option;
+        }
+        $select->setOptions($options);
         return $select;
     }
 
