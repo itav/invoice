@@ -15,7 +15,16 @@ $app['serializer'] = function() {
 
 $app['templating'] = function($app) {
     $loader = new FilesystemLoader($app['view_dirs']);
-    $templating =  new PhpEngine(new TemplateNameParser(), $loader);
+    $templating = new PhpEngine(new TemplateNameParser(), $loader);
     $templating->set(new SlotsHelper());
     return $templating;
+};
+
+$app['twig'] = function($app) {
+    $loader = new Twig_Loader_Filesystem($app['twig_dirs']);
+    $twig = new Twig_Environment($loader, [
+        'cache' => __DIR__ . '/../app/cache/twig',
+        'debug' => true,
+    ]);
+    return $twig;
 };

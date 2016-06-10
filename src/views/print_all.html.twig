@@ -1,0 +1,150 @@
+<table width="100%">
+    <tr >
+        <td width="45%">
+            <table>
+                <tr><td class="headgrey">Sprzedawca:</td></tr>
+                <tr><td>{$seller.name}&nbsp;{$seller.lastname}</td></tr>
+                <tr><td>{$seller.address}</td></tr>
+                <tr><td>{$seller.zip}&nbsp;{$seller.city}</td></tr>
+                <tr><td>NIP:&nbsp;{$seller.nip}</td></tr>
+                <tr><td colspan="2">nr konta:{$seller.bankaccount}</td></tr>
+            </table>
+
+        </td>
+        <td width="55%">
+            <table>
+                <tr ><td colspan="2" class="mdf bold txtcenter">Faktura VAT {$invoice.tnumber}</td></tr>
+                <tr><td class="txtright">Data wystawienia: </td><td class="txtcenter">{$invoice.cdate|date_format:"%d-%m-%Y"}</td></tr>
+                <tr><td class="txtright">Data sprzedaży: </td><td  class="txtcenter">{$invoice.odate|date_format:"%d-%m-%Y"}</td></tr>
+                <tr><td class="txtright">Data dostawy: </td><td  class="txtcenter">{$invoice.ddate|date_format:"%d-%m-%Y"}</td></tr>    
+                <tr><td class="txtright">Sposób zapłaty: </td><td  class="txtcenter">przelew</td></tr>
+                <tr><td class="txtright">Data płatności: </td><td  class="txtcenter">{$invoice.pdate|date_format:"%d-%m-%Y"}</td></tr>
+            </table>
+        </td>
+    </tr>
+    <tr >
+        <td>
+            <table >
+                <tr><td class="headgrey">Nabywca:</td></tr>
+                <tr><td>{$buyer.name}&nbsp;{$buyer.lastname}</td></tr>
+                <tr><td>{$buyer.address}</td></tr>
+                <tr><td>{$buyer.zip}&nbsp;{$buyer.city}</td></tr>
+                <tr><td>NIP:&nbsp;{$buyer.nip}</td></tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr ><td></td></tr>
+                <tr ><td></td></tr>
+                <tr ><td></td></tr>
+                <tr ><td class=" bold txtcenter">Adres korespondencyjny:</td></tr>
+                <tr><td class="txtcenter">{$buyer.name}&nbsp;{$buyer.lastname}</td></tr>
+                <tr><td class="txtcenter">{$buyer.address}</td></tr>
+                <tr><td class="txtcenter">{$buyer.zip}&nbsp;{$buyer.city}</td></tr>
+            </table>
+        </td>
+    </tr>    
+</table>
+<br><br><br><br>
+<table width="100%" border="1" cellpadding="2">
+    <tr class="txtcenter" >
+        <td width="3%" class="headgrey">Lp</td>
+        <td width="40%" class="headgrey">Nazwa towaru lub usługi</td>
+        <td width="5%" class="headgrey">Ilość</td>
+        <td width="4%" class="headgrey">JM</td>
+        <td width="11%" class="headgrey">Cena netto</td>
+        <td width="11%" class="headgrey">Wartość netto</td>
+        <td width="5%" class="headgrey">VAT</td>
+        <td width="10%" class="headgrey">Kwota VAT</td>
+        <td width="11%" class="headgrey">Wartość brutto</td>
+    </tr>
+    {foreach $invoice.items as $item}
+    <tr>
+        <td>{$item.itemid}</td>
+        <td>{$item.description}</td>
+        <td>{$item.quantity|replace:'.':','}</td>
+        <td>{$item.unit}</td>
+        <td class="txtright">{$item.jvalue|replace:'.':','}</td>
+        <td class="txtright">{$item.value|replace:'.':','}</td>
+        <td>{$item.taxtype}</td>
+        <td class="txtright">{$item.tax|replace:'.':','}</td>
+        <td class="txtright">{$item.bvalue|replace:'.':','}</td>
+    </tr>
+    {/foreach}
+</table>
+<br><br>
+<table width="100%" >
+    <tr>
+        <td width="50%">
+        
+        </td>
+        <td >
+            <table width="100%" id="suma-podatków" border="1" >
+                <tr>
+                    <td width="16%" class="headgrey">Stawka VAT</td>
+                    <td width="28%" class="headgrey">Wartość netto</td>
+                    <td width="26%" class="headgrey">Kwota VAT</td>
+                    <td width="28%" class="headgrey">Wartość brutto</td>     
+                </tr>
+                {foreach $sums as $sum}
+                <tr>
+                    <td class="txtcenter">{$sum.taxtype}</td>
+                    <td class="txtright">{$sum.netto|replace:'.':','}</td>
+                    <td class="txtright">{$sum.tax|replace:'.':','}</td>
+                    <td class="txtright">{$sum.brutto|replace:'.':','}</td>  
+                </tr>
+                {/foreach}
+                <tr>
+                    <td class="txtright">RAZEM:</td>
+                    <td class="txtright">{$total.netto|replace:'.':','}</td>
+                    <td class="txtright">{$total.tax|replace:'.':','}</td>
+                    <td class="txtright">{$total.brutto|replace:'.':','}</td>  
+                </tr>                
+            </table>
+        </td>
+    </tr>
+</table>
+<br><br>
+<table width="100%" >
+    <tr>
+        <td width="60%">
+        
+        </td>
+        <td width="40%">
+            <table width="100%" id="suma-podatków"  >
+                <tr>
+                    <td width="50%" class="headgrey">Razem do zapłaty:</td>
+                    <td width="50%" class="headgrey txtright">{$total.brutto|replace:'.':','} PLN</td>
+                </tr>
+                <tr>
+                    <td colspan="2">Razem słownie: {$totalinwords}</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+<br><br><br><br><br><br>
+<table id="podpisy">
+    <tr>
+        <td width="50%" class="txtcenter">_________________________________________</td>
+        <td width="50%" class="txtcenter">_________________________________________</td>
+    </tr>
+    <tr>
+        <td class="txtcenter smallfont">(podpis osoby upoważnionej do wystawienia faktury)</td>
+        <td class="txtcenter smallfont">(osoba upoważniona do odbioru faktury)</td>
+    </tr>    
+</table>
+<br><br><br>
+<table id="info-dodatkowe" width="100%">
+    <tr>
+        <td >Dodatkowe informacje: </td>
+    </tr>
+</table>
+<br><br><br><br><br>
+<table id="info-dodatkowe" width="100%">
+    <tr>
+        <td class="txtcenter"></td>
+    </tr>
+</table>
+<div class="page-break" style="page-break-before:always;">
+</div>

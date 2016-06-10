@@ -269,6 +269,35 @@ class InvoiceRepo
         return $items;
     }
     
+    /**
+     * 
+     * @param Invoice $model
+     * @return \App\Invoice[]
+     */
+    public function findByBuyerDatePlanAndPrice($model)
+    {
+        $invoices = [];
+        if(!($model instanceof Invoice)){
+            return $invoices;
+        }
+        
+        $serializer = new Serializer();
+        $handle = fopen($this->file, 'r+');
+        while(($line = fgets($handle, 4096)) !== false){
+            $item = new Invoice();
+            $itemData = $this->unescape(str_getcsv($line)[0]);
+            $item = $serializer->unserialize($itemData, Invoice::class, $item);
+            if ($item->getBuyer()->getId() == $model->getBuyer()->getId() 
+                && $item->getNumberPlanId() == $model->getNumberPlanId()
+                && $item->getTotalGross() == $model->getTotalGross()
+                && $item->getCreateDate() == $model->getCreateDate()) {
+                $invoices[] = $item;
+            }
+        }
+        fclose($handle);
+        return $invoices;
+    }    
+    
     private function escape($line)
     {
         return '"' . str_replace('"', '\"', $line) . '"' . PHP_EOL;

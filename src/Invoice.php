@@ -8,6 +8,8 @@ class Invoice
     const STATUS_DRAFT = 1;
     const STATUS_DELETED = 2;
     const STATUS_SENT = 3;
+    
+    const TAX_DEFAULT_ID = 1;
 
     private $id;
     private $number;
@@ -53,12 +55,12 @@ class Invoice
 
     /**
      *
-     * @var Product[] 
+     * @var InvoiceItem[] 
      */
-    private $products = [];
-    private $totalNet;
-    private $totalTax;
-    private $totalGross;
+    private $invoiceItems = [];
+    private $totalNet = 0;
+    private $totalTax = 0;
+    private $totalGross = 0;
 
     /**
      *
@@ -85,6 +87,12 @@ class Invoice
         $this->sellDate = new \DateTime();
         $this->paymentDate = new \DateTime('+14 days');
         $this->paymentType = 1;
+        
+        $item = new InvoiceItem();
+        $tax = new Tax();
+        $tax->setId(self::TAX_DEFAULT_ID);
+        $item->setTax($tax);
+        $this->addInvoiceItem($item);
 
         $npRepo = new NumberPlanRepo();
         $repo = new InvoiceRepo();
@@ -97,7 +105,7 @@ class Invoice
         $this->number = $repo->getNextFreeNumber($plan, $this->createDate);
         $this->displayNumber = $plan->prepare($this->number, $this->createDate);
 
-        $this->addProduct(new Product());
+        
     }
 
     public function getId()
@@ -155,9 +163,9 @@ class Invoice
         return $this->postAdres;
     }
 
-    public function getProducts()
+    public function getInvoiceItems()
     {
-        return $this->products;
+        return $this->invoiceItems;
     }
 
     public function getTotalNet()
@@ -251,29 +259,29 @@ class Invoice
         return $this;
     }
 
-    public function setProducts(array $products)
+    public function setInvoiceItems(array $invoiceItems)
     {
-        $this->products = $products;
+        $this->invoiceItems = $invoiceItems;
         return $this;
     }
 
-    public function addProduct($product)
+    public function addInvoiceItem($invoiceItem)
     {
-        $this->products[] = $product;
+        $this->invoiceItems[] = $invoiceItem;
         return $this;
     }
     
-    public function delProduct($index)
+    public function delInvoiceItem($index)
     {
-        if(key_exists($index, $this->products)){
-            unset($this->products[$index]);
+        if(array_key_exists($index, $this->invoiceItems)){
+            unset($this->invoiceItems[$index]);
         }
         return $this;
     }
 
-    public function reindexProducts()
+    public function reindexInvoiceItems()
     {
-        $this->products = array_values($this->products);
+        $this->invoiceItems = array_values($this->invoiceItems);
         return $this;
     }
 

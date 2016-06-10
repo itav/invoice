@@ -3,8 +3,12 @@
 require_once __DIR__ . '/../vendor/autoload.php';
 
 $request = \Symfony\Component\HttpFoundation\Request::create(
-    '/add',
-    'POST'
+    '/cron/gen/all',
+    'POST',
+    [
+        'from' => '2000-02-28',
+        'to' => '2036-05-31'
+    ]
 );
 $request->overrideGlobals();
 

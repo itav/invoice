@@ -1,5 +1,7 @@
+/app/cache/
 /vendor/
 /nbproject/
 /test/
 /src/storage/
 composer.lock
+/web/temp.*

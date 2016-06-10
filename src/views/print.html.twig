@@ -1,0 +1,154 @@
+{% extends "layout.twig" %}
+{% block head %} 
+    <link rel="stylesheet" href="/js/print.css"/>
+{% endblock %}
+{% block content %}
+<table width="100%">
+    <tr >
+        <td width="45%">
+            <table>
+                <tr><td class="headgrey">Sprzedawca:</td></tr>
+                <tr><td>{{invoice.seller.name}}&nbsp;{{invoice.seller.first_name}}&nbsp;{{invoice.seller.last_name}}</td></tr>
+                <tr><td>{{invoice.seller.addresses.main.street}}</td></tr>
+                <tr><td>{{invoice.seller.addresses.main.zip}}&nbsp;{{invoice.seller.addresses.main.city}}</td></tr>
+                <tr><td>NIP:&nbsp;{{ invoice.seller.ten }}</td></tr>
+                <tr><td colspan="2">nr konta:{{ invoice.seller.bank_account }}</td></tr>
+            </table>
+
+        </td>
+        <td width="55%">
+            <table>
+                <tr ><td colspan="2" class="mdf bold txtcenter">Faktura VAT {{ invoice.display_number }}</td></tr>
+                <tr><td class="txtright">Data wystawienia: </td><td class="txtcenter">{{ invoice.create_date|date('Y-m-d') }}</td></tr>
+                <tr><td class="txtright">Data sprzedaży: </td><td  class="txtcenter">{{ invoice.sell_date|date('Y-m-d') }}</td></tr>
+                <tr><td class="txtright">Data dostawy: </td><td  class="txtcenter">{{ invoice.sell_date|date('Y-m-d') }}</td></tr>    
+                <tr><td class="txtright">Sposób zapłaty: </td><td  class="txtcenter">przelew</td></tr>
+                <tr><td class="txtright">Data płatności: </td><td  class="txtcenter">{{ invoice.payment_date|date('Y-m-d') }}</td></tr>
+            </table>
+        </td>
+    </tr>
+    <tr >
+        <td>
+            <table >
+                <tr><td class="headgrey">Nabywca:</td></tr>
+                <tr><td>{{invoice.buyer.name}}&nbsp;{{invoice.buyer.first_name}}&nbsp;{{invoice.buyer.last_name}}</td></tr>
+                <tr><td>{{ invoice.buyer.addresses.main.street }}</td></tr>
+                <tr><td>{{ invoice.buyer.addresses.main.zip }}&nbsp;{{ invoice.buyer.addresses.main.city }}</td></tr>
+                <tr><td>NIP:&nbsp;{{invoice.buyer.ten}}</td></tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr ><td></td></tr>
+                <tr ><td></td></tr>
+                <tr ><td></td></tr>
+                <tr ><td class=" bold txtcenter">Adres korespondencyjny:</td></tr>
+                <tr><td class="txtcenter">{{invoice.buyer.name}}&nbsp;{{invoice.buyer.first_name}}&nbsp;{{invoice.buyer.last_name}}</td></tr>
+                <tr><td class="txtcenter">{{ invoice.buyer.addresses.post.street }}</td></tr>
+                <tr><td class="txtcenter">{{ invoice.buyer.addresses.post.zip }}&nbsp;{{ invoice.buyer.addresses.post.city }}</td></tr>
+            </table>
+        </td>
+    </tr>    
+</table>
+<br><br><br><br>
+<table width="100%" border="1" cellpadding="2">
+    <tr class="txtcenter" >
+        <td width="3%" class="headgrey">Lp</td>
+        <td width="40%" class="headgrey">Nazwa towaru lub usługi</td>
+        <td width="5%" class="headgrey">Ilość</td>
+        <td width="4%" class="headgrey">JM</td>
+        <td width="11%" class="headgrey">Cena netto</td>
+        <td width="11%" class="headgrey">Wartość netto</td>
+        <td width="5%" class="headgrey">VAT</td>
+        <td width="10%" class="headgrey">Kwota VAT</td>
+        <td width="11%" class="headgrey">Wartość brutto</td>
+    </tr>
+    {% for item in invoice.invoice_items %}
+    <tr>
+        <td>{{ item.ordinal }}</td>
+        <td>{{ item.description }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ item.unit }}</td>
+        <td class="txtright">{{ item.net_price }}</td>
+        <td class="txtright">{{ item.net_value }}</td>
+        <td>{{ item.tax.name }}</td>
+        <td class="txtright">{{ item.tax_value }}</td>
+        <td class="txtright">{{ item.gross_value }}</td>
+    </tr>
+    {% endfor %}
+</table>
+<br><br>
+<table width="100%" >
+    <tr>
+        <td width="50%">
+        
+        </td>
+        <td >
+            <table width="100%" id="suma-podatków" border="1" >
+                <tr>
+                    <td width="16%" class="headgrey">Stawka VAT</td>
+                    <td width="28%" class="headgrey">Wartość netto</td>
+                    <td width="26%" class="headgrey">Kwota VAT</td>
+                    <td width="28%" class="headgrey">Wartość brutto</td>     
+                </tr>
+                {foreach $sums as $sum}
+                <tr>
+                    <td class="txtcenter">{$sum.taxtype}</td>
+                    <td class="txtright">{$sum.netto|replace:'.':','}</td>
+                    <td class="txtright">{$sum.tax|replace:'.':','}</td>
+                    <td class="txtright">{$sum.brutto|replace:'.':','}</td>  
+                </tr>
+                {/foreach}
+                <tr>
+                    <td class="txtright">RAZEM:</td>
+                    <td class="txtright">{$total.netto|replace:'.':','}</td>
+                    <td class="txtright">{$total.tax|replace:'.':','}</td>
+                    <td class="txtright">{$total.brutto|replace:'.':','}</td>  
+                </tr>                
+            </table>
+        </td>
+    </tr>
+</table>
+<br><br>
+<table width="100%" >
+    <tr>
+        <td width="60%">
+        
+        </td>
+        <td width="40%">
+            <table width="100%" id="suma-podatków"  >
+                <tr>
+                    <td width="50%" class="headgrey">Razem do zapłaty:</td>
+                    <td width="50%" class="headgrey txtright">{$total.brutto|replace:'.':','} PLN</td>
+                </tr>
+                <tr>
+                    <td colspan="2">Razem słownie: {$totalinwords}</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+<br><br><br><br><br><br>
+<table id="podpisy">
+    <tr>
+        <td width="50%" class="txtcenter">_________________________________________</td>
+        <td width="50%" class="txtcenter">_________________________________________</td>
+    </tr>
+    <tr>
+        <td class="txtcenter smallfont">(podpis osoby upoważnionej do wystawienia faktury)</td>
+        <td class="txtcenter smallfont">(osoba upoważniona do odbioru faktury)</td>
+    </tr>    
+</table>
+<br><br><br>
+<table id="info-dodatkowe" width="100%">
+    <tr>
+        <td >Dodatkowe informacje: </td>
+    </tr>
+</table>
+<br><br><br><br><br>
+<table id="info-dodatkowe" width="100%">
+    <tr>
+        <td class="txtcenter"></td>
+    </tr>
+</table>
+{% endblock %}
