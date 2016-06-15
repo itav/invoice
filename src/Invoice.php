@@ -10,8 +10,10 @@ class Invoice
     const STATUS_SENT = 3;
     
     const TAX_DEFAULT_ID = 1;
+    
 
     private $id;
+    private $typeInfo;
     private $number;
     private $displayNumber;
     private $numberPlanId;
@@ -49,12 +51,6 @@ class Invoice
 
     /**
      *
-     * @var Address
-     */
-    private $postAdres;
-
-    /**
-     *
      * @var InvoiceItem[] 
      */
     private $invoiceItems = [];
@@ -68,6 +64,8 @@ class Invoice
      */
     private $taxSummaries = [];
     private $issuer;
+    private $totalInWords;
+    private $info;
 
     public function __construct()
     {
@@ -287,19 +285,19 @@ class Invoice
 
     public function setTotalNet($totalNet)
     {
-        $this->totalNet = $totalNet;
+        $this->totalNet = number_format((float)$totalNet, 2, '.', '');
         return $this;
     }
 
     public function setTotalTax($totalTax)
     {
-        $this->totalTax = $totalTax;
+        $this->totalTax = number_format((float)$totalTax, 2, '.', '');;
         return $this;
     }
 
     public function setTotalGross($totalGross)
     {
-        $this->totalGross = $totalGross;
+        $this->totalGross = number_format((float)$totalGross, 2, '.', '');;
         return $this;
     }
 
@@ -320,5 +318,37 @@ class Invoice
         $this->issuer = $issuer;
         return $this;
     }
+    
+    public function getTotalInWords()
+    {
+        return $this->totalInWords;
+    }
 
+    public function getInfo()
+    {
+        return $this->info;
+    }
+
+    public function setTotalInWords($totalInWords)
+    {
+        $this->totalInWords = $totalInWords;
+        return $this;
+    }
+
+    public function setInfo($info)
+    {
+        $this->info = $info;
+        return $this;
+    }
+
+    public function getTypeInfo()
+    {
+        return $this->typeInfo;
+    }
+
+    public function setTypeInfo($typeInfo)
+    {
+        $this->typeInfo = $typeInfo;
+        return $this;
+    }
 }

@@ -8,4 +8,5 @@ $app['debug'] = true;
 require_once __DIR__ . '/../lib/routes.php';
 require_once __DIR__ . '/../lib/services.php';
 
+\Symfony\Component\HttpFoundation\Request::enableHttpMethodParameterOverride();
 $app->run();

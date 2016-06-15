@@ -1,0 +1,13 @@
+{% extends "page.twig" %}
+
+{% block title %}List{% endblock %}
+{% block head %}
+    {{ parent() }}
+{% endblock %}
+{% block content %}
+    <div>{{include(form.template, {data: form})}}</div>
+    <div>{{include(table.template, {data: table})}}</div>
+{% endblock %}
+{% block javascript %}
+    <script src="/js/itav/ui.js" type="text/javascript" ></script>
+{% endblock %}

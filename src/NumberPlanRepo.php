@@ -47,7 +47,8 @@ class NumberPlanRepo
         $numberPlan = new NumberPlan();
         $numberPlan
                 ->setId(1)
-                ->setTemplate('%N/%m/SMTS/%Y');
+                ->setTemplate('%N/%m/NET/%Y')
+                ->setDafault(true);
         $numberPlans[] = $numberPlan;
         
         $numberPlan = new NumberPlan();
@@ -59,8 +60,11 @@ class NumberPlanRepo
         $numberPlan = new NumberPlan();
         $numberPlan
                 ->setId(3)
-                ->setTemplate('%N/%m/NET/%Y')
-                ->setDafault(true);
+                ->setTemplate('%N/%m/ICDT/%Y');
+        $numberPlan = new NumberPlan();
+        $numberPlan
+                ->setId(4)
+                ->setTemplate('%N/%m/SMTS/%Y');        
         $numberPlans[] = $numberPlan;
         return $numberPlans;
     }

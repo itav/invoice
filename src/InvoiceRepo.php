@@ -7,45 +7,37 @@ use Itav\Component\Serializer\Serializer;
 class InvoiceRepo
 {
 
-    private $file = __DIR__ . '/storage/invoice.csv';
-    private $fileOld = __DIR__ . '/storage/invoice.csv.old';
-    private $fileTemp = __DIR__ . '/storage/invoice.csv.temp';
+    private $file = __DIR__ . '/storage/invoice.json';
+    private $serializer;
 
+    public function __construct()
+    {
+        $this->serializer = new Serializer();
+    }
+
+    /**
+     * 
+     * @param \App\Invoice $invoice
+     * @return string | bool
+     */
     public function save(Invoice $invoice)
     {
-        if (!file_exists($this->file)) {
-            return false;
-        }
-        $serializer = new Serializer();
-        $id = $invoice->getId();
-        $rows = [];
-        file_put_contents($this->fileTemp, '');
-        $handle = fopen($this->file, 'r+');
-        $found = false;
-        while(($line = fgets($handle, 4096)) !== false){
-            $item = new Invoice();
-            $itemData = $this->unescape(str_getcsv($line)[0]);
-            $item = $serializer->unserialize($itemData, Invoice::class, $item);
-            if ($item->getId() !== $id) {
-                file_put_contents($this->fileTemp, $line, FILE_APPEND);
-                continue;
+        $rows = json_decode(file_get_contents($this->file), true);
+        $data = $this->serializer->normalize($invoice);
+        $foundKey = false;
+        foreach($rows as $key => $item){
+            if($item['id'] == $invoice->getId()){
+                $foundKey = $key;
+                break;
             }
-            $found = true;
         }
-        fclose($handle);
-        $data = $this->escape(json_encode($serializer->normalize($invoice)));
-        if(!$found){
-            if(($result = file_put_contents($this->file, $data, FILE_APPEND)) === false){
-                return false;
-            }
-            return $id;
+        if(false !== $foundKey){
+            unset($rows[$foundKey]);
         }
-        if(($result = file_put_contents($this->fileTemp, $data, FILE_APPEND)) === false){
-            return false;
-        }
-        rename($this->file, $this->fileOld);
-        rename($this->fileTemp, $this->file);        
-        return $id;
+        $rows[] = $data;
+        
+        file_put_contents($this->file, json_encode($rows));
+        return $invoice->getId();        
     }
 
     /**
@@ -55,19 +47,53 @@ class InvoiceRepo
      */
     public function find($id)
     {
-        $serializer = new Serializer();
-        $handle = fopen($this->file, 'r+');
-        while(($line = fgets($handle, 4096)) !== false){
-            $item = new Invoice();
-            $itemData = $this->unescape(str_getcsv($line)[0]);
-            $item = $serializer->unserialize($itemData, Invoice::class, $item);
-            if ($item->getId() === $id) {
-                fclose($handle);
-                return $item;
+        $invoice = new Invoice();
+        $rows = json_decode(file_get_contents($this->file), true);
+        foreach($rows as $item){
+            if($item['id'] == $id){
+                $this->serializer->unserialize($item, Invoice::class, $invoice);
+                return $invoice;
+            }
+        } 
+        return $invoice;
+    }
+    /**
+     * 
+     * @return Invoice[]
+     */
+    public function findAll()
+    {
+        $rows = json_decode(file_get_contents($this->file), true);
+        $results = [];
+        foreach($rows as $item){
+            $results[] =  $this->serializer->unserialize($item, Invoice::class);
+        } 
+        return $results;
+    } 
+    
+    /**
+     * 
+     * @param int $id
+     * @return \App\Subscription
+     */
+    public function delete($id)
+    {
+        $rows = json_decode(file_get_contents($this->file), true);
+        $foundKey = false;
+        foreach($rows as $key => $item){
+            if($item['id'] == $id){
+                $foundKey = $key;
+                break;
             }
         }
-        return null;
-    }
+        if(false !== $foundKey){
+            unset($rows[$foundKey]);
+        }else{
+            return false;
+        }        
+        file_put_contents($this->file, json_encode($rows));
+        return true;
+    }        
     
     /**
      * 
@@ -83,7 +109,7 @@ class InvoiceRepo
         if(!$date){
             $date = new \DateTime();
         }        
-        $result = 1;
+        $max = 1;
         $type = $plan->getPeriodType();
         
         if($type == NumberPlan::PERIOD_MONTHLY){
@@ -99,10 +125,11 @@ class InvoiceRepo
             $invoices = $this->findByNumberPlan($plan);
         }
         foreach ($invoices as $invoice){
-            
-            ($invoice->getNumber() <= $result) ? : $result = $invoice->getNumber();
+            if($invoice->getNumber() >= $max){
+                $max = $invoice->getNumber() + 1;
+            }
         }
-        return $result;
+        return $max;
     }
     /**
      * 
@@ -116,18 +143,14 @@ class InvoiceRepo
             return $invoices;
         }
         $id = $plan->getId();
-        
-        $serializer = new Serializer();
-        $handle = fopen($this->file, 'r+');
-        while(($line = fgets($handle, 4096)) !== false){
-            $item = new Invoice();
-            $itemData = $this->unescape(str_getcsv($line)[0]);
-            $item = $serializer->unserialize($itemData, Invoice::class, $item);
-            if ($item->getNumberPlanId() == $id) {
-                $invoices[] = $item;
+        $rows = json_decode(file_get_contents($this->file), true);
+        foreach($rows as $item){
+            $invoice = new Invoice();
+            $this->serializer->unserialize($item, Invoice::class, $invoice);
+            if ($invoice->getNumberPlanId() == $id) {
+                $invoices[] = $invoice;
             }
-        }
-        fclose($handle);
+        } 
         return $invoices;
     }
     /**
@@ -142,19 +165,15 @@ class InvoiceRepo
             return $invoices;
         }
         $year = $date->format('Y');
-        
-        $serializer = new Serializer();
-        $handle = fopen($this->file, 'r+');
-        while(($line = fgets($handle, 4096)) !== false){
-            $item = new Invoice();
-            $itemData = $this->unescape(str_getcsv($line)[0]);
-            $item = $serializer->unserialize($itemData, Invoice::class, $item);
-            $createDate = $item->getCreateDate();
+        $rows = json_decode(file_get_contents($this->file), true);
+        foreach($rows as $item){
+            $invoice = new Invoice();
+            $this->serializer->unserialize($item, Invoice::class, $invoice);
+            $createDate = $invoice->getCreateDate();
             if ($createDate->format('Y') == $year) {
-                $invoices[] = $item;
+                $invoices[] = $invoice;
             }
-        }
-        fclose($handle);
+        } 
         return $invoices;
     }
     /**
@@ -170,21 +189,48 @@ class InvoiceRepo
         }
         $year = $date->format('Y');
         $month = $date->format('m');
-        
-        $serializer = new Serializer();
-        $handle = fopen($this->file, 'r+');
-        while(($line = fgets($handle, 4096)) !== false){
-            $item = new Invoice();
-            $itemData = $this->unescape(str_getcsv($line)[0]);
-            $item = $serializer->unserialize($itemData, Invoice::class, $item);
-            $createDate = $item->getCreateDate();
+        $rows = json_decode(file_get_contents($this->file), true);
+        foreach($rows as $item){
+            $invoice = new Invoice();
+            $this->serializer->unserialize($item, Invoice::class, $invoice);
+            $createDate = $invoice->getCreateDate();
             if ($createDate->format('Y') == $year && $createDate->format('m') == $month) {
-                $invoices[] = $item;
+                $invoices[] = $invoice;
             }
         }
-        fclose($handle);
         return $invoices;
     }
+    
+        /**
+     * 
+     * @param InvoiceCriteria $criteria
+     * @return \App\Invoice[]
+     */
+    public function findByCriteria($criteria)
+    {
+        $invoices = [];
+        $month = $criteria->getMonth() ? $criteria->getMonth() : null;
+        $year = $criteria->getYear() ? $criteria->getYear(): null;
+        $np = $criteria->getNumberPlan() ? $criteria->getNumberPlan() : null;
+        $rows = json_decode(file_get_contents($this->file), true);
+        foreach($rows as $item){
+            $invoice = new Invoice();
+            $this->serializer->unserialize($item, Invoice::class, $invoice);
+            $createDate = $invoice->getCreateDate();
+            if ($year && $createDate->format('Y') != $year) {
+                continue;
+            }
+            if ($month && $createDate->format('m') != $month) {
+                continue;
+            }
+            if ($np && $invoice->getNumberPlanId() != $np) {
+                continue;
+            } 
+            $invoices[] = $invoice;
+        }
+        return $invoices;
+    }
+    
     /**
      * 
      * @param \DateTime $date
@@ -203,19 +249,16 @@ class InvoiceRepo
         $year = $date->format('Y');
         $id = $plan->getId();
         
-        $serializer = new Serializer();
-        $handle = fopen($this->file, 'r+');
-        while(($line = fgets($handle, 4096)) !== false){
-            $item = new Invoice();
-            $itemData = $this->unescape(str_getcsv($line)[0]);
-            $item = $serializer->unserialize($itemData, Invoice::class, $item);
-            $createDate = $item->getCreateDate();
-            if ($createDate->format('Y') == $year && $item->getNumberPlanId() == $id) {
-                $invoices[] = $item;
+        $rows = json_decode(file_get_contents($this->file), true);
+        foreach($rows as $item){
+            $invoice = new Invoice();
+            $this->serializer->unserialize($item, Invoice::class, $invoice);
+            $createDate = $invoice->getCreateDate();
+            if ($createDate->format('Y') == $year && $invoice->getNumberPlanId() == $id) {
+                $invoices[] = $invoice;
             }
         }
-        fclose($handle);
-        return $invoices;
+        return $invoices;        
     }    
     /**
      * 
@@ -236,38 +279,17 @@ class InvoiceRepo
         $month = $date->format('m');
         $id = $plan->getId();
         
-        $serializer = new Serializer();
-        $handle = fopen($this->file, 'r+');
-        while(($line = fgets($handle, 4096)) !== false){
-            $item = new Invoice();
-            $itemData = $this->unescape(str_getcsv($line)[0]);
-            $item = $serializer->unserialize($itemData, Invoice::class, $item);
-            $createDate = $item->getCreateDate();
-            if ($createDate->format('Y') == $year && $createDate->format('m') == $month && $item->getNumberPlanId() == $id) {
-                $invoices[] = $item;
+        $rows = json_decode(file_get_contents($this->file), true);
+        foreach($rows as $item){
+            $invoice = new Invoice();
+            $this->serializer->unserialize($item, Invoice::class, $invoice);
+            $createDate = $invoice->getCreateDate();
+            if ($createDate->format('Y') == $year && $createDate->format('m') == $month && $invoice->getNumberPlanId() == $id) {
+                $invoices[] = $invoice;
             }
         }
-        fclose($handle);
-        return $invoices;
+        return $invoices;        
     }     
-    /**
-     * 
-     * @return Invoice[]
-     */
-    public function findAll()
-    {
-        $serializer = new Serializer();
-        $handle = fopen($this->file, 'r+');
-        $items = [];
-        while(($line = fgets($handle, 4096)) !== false){
-            $item = new Invoice();
-            $itemData = $this->unescape(str_getcsv($line)[0]);
-            $item = $serializer->unserialize($itemData, Invoice::class, $item);
-            $items[] = $item;
-        }
-        fclose($handle);
-        return $items;
-    }
     
     /**
      * 
@@ -281,31 +303,17 @@ class InvoiceRepo
             return $invoices;
         }
         
-        $serializer = new Serializer();
-        $handle = fopen($this->file, 'r+');
-        while(($line = fgets($handle, 4096)) !== false){
-            $item = new Invoice();
-            $itemData = $this->unescape(str_getcsv($line)[0]);
-            $item = $serializer->unserialize($itemData, Invoice::class, $item);
-            if ($item->getBuyer()->getId() == $model->getBuyer()->getId() 
-                && $item->getNumberPlanId() == $model->getNumberPlanId()
-                && $item->getTotalGross() == $model->getTotalGross()
-                && $item->getCreateDate() == $model->getCreateDate()) {
-                $invoices[] = $item;
+        $rows = json_decode(file_get_contents($this->file), true);
+        foreach($rows as $item){
+            $invoice = new Invoice();
+            $this->serializer->unserialize($item, Invoice::class, $invoice);
+            if ($invoice->getBuyer()->getId() == $model->getBuyer()->getId() 
+                && $invoice->getNumberPlanId() == $model->getNumberPlanId()
+                && $invoice->getTotalGross() == $model->getTotalGross()
+                && $invoice->getCreateDate() == $model->getCreateDate()) {
+                $invoices[] = $invoice;
             }
         }
-        fclose($handle);
-        return $invoices;
-    }    
-    
-    private function escape($line)
-    {
-        return '"' . str_replace('"', '\"', $line) . '"' . PHP_EOL;
-
-    }
-    private function unescape($line)
-    {
-        return str_replace('\"', '"', $line);
-
-    }    
+        return $invoices;         
+    }       
 }

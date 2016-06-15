@@ -6,7 +6,11 @@
         "symfony/templating": "^3.0",
         "itav/interesant-client": "~0.1",
         "itav/product-client": "~0.1",
-        "twig/twig": "^1.24"
+        "twig/twig": "^1.24",
+        "itav/table": "^0.1.0"
+    },
+    "require-dev": {
+        "itav/mysql": "dev-master"
     },
     "autoload" : {
         "psr-4" : {

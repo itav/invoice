@@ -6,8 +6,8 @@ $request = \Symfony\Component\HttpFoundation\Request::create(
     '/cron/gen/all',
     'POST',
     [
-        'from' => '2000-02-28',
-        'to' => '2036-05-31'
+        'from' => '2016-06-01',
+        'to' => '2016-06-30'
     ]
 );
 $request->overrideGlobals();

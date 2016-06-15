@@ -5,7 +5,7 @@ namespace App;
 use Itav\Component\Form;
 use Silex\Application;
 
-class SubscriptionForm
+class SubscriptionForm extends CommonForm
 {
     /**
      * @param Application $app
@@ -72,7 +72,8 @@ class SubscriptionForm
             ->setAction($app['url_generator']->generate('sub_add'))
             ->addElement($row1)
             ->addElement($row2)
-            ->addElement($submit);
+            ->addElement($submit)
+            ->addElement(self::cancel());
             
         return $form;
     }

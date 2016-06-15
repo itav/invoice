@@ -37,19 +37,19 @@ class TaxSummary
 
     public function setTotalNet($totalNet)
     {
-        $this->totalNet = $totalNet;
+        $this->totalNet = number_format((float)$totalNet, 2, '.', '');;
         return $this;
     }
 
     public function setTotalTax($totalTax)
     {
-        $this->totalTax = $totalTax;
+        $this->totalTax = number_format((float)$totalTax, 2, '.', '');;
         return $this;
     }
 
     public function setTotalGross($totalGross)
     {
-        $this->totalGross = $totalGross;
+        $this->totalGross = number_format((float)$totalGross, 2, '.', '');;
         return $this;
     }
 

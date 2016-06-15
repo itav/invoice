@@ -91,13 +91,13 @@ class InvoiceItem
 
     public function setTaxValue($taxValue)
     {
-        $this->taxValue = $taxValue;
+        $this->taxValue = number_format((float)$taxValue, 2, '.', '');;
         return $this;
     }
 
     public function setPriceGross($priceGross)
     {
-        $this->priceGross = $priceGross;
+        $this->priceGross = number_format((float)$priceGross, 2, '.', '');;
         return $this;
     }
 
@@ -166,19 +166,19 @@ class InvoiceItem
 
     public function setNetPrice($netPrice)
     {
-        $this->netPrice = $netPrice;
+        $this->netPrice = number_format((float)$netPrice, 2, '.', '');;
         return $this;
     }
 
     public function setNetValue($netValue)
     {
-        $this->netValue = $netValue;
+        $this->netValue = number_format((float)$netValue, 2, '.', '');;
         return $this;
     }
 
     public function setGrossValue($grossValsue)
     {
-        $this->grossValue = $grossValsue;
+        $this->grossValue = number_format((float)$grossValsue, 2, '.', '');;
         return $this;
     }
 
